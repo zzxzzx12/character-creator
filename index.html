@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>角色创建器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 40px;
+        }
+
+        .character-preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .character-container {
+            position: relative;
+            width: 341px;
+            height: 512px;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #f8f9fa;
+            margin-bottom: 20px;
+        }
+
+        .character-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s ease;
+        }
+
+        #baseCharacter {
+            z-index: 1;
+        }
+
+        #pantsLayer {
+            z-index: 2;
+        }
+
+        #shirtLayer {
+            z-index: 3;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .control-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+        }
+
+        .control-group h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .option-btn {
+            padding: 12px 8px;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .option-btn:hover {
+            border-color: #007bff;
+            background: #e7f3ff;
+            transform: translateY(-2px);
+        }
+
+        .option-btn.active {
+            border-color: #007bff;
+            background: #007bff;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+
+        .color-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 auto;
+        }
+
+        .color-option:hover {
+            border-color: #007bff;
+            transform: scale(1.1);
+        }
+
+        .color-option.active {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .export-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .export-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .title {
+            text-align: center;
+            color: #495057;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 700;
+            grid-column: 1 / -1;
+        }
+
+        .export-options {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .export-modal {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .export-modal h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .export-option {
+            margin-bottom: 15px;
+        }
+
+        .export-option label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .export-option select, .export-option input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .export-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .export-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .cancel-btn {
+            background: #f1f1f1;
+            color: #333;
+        }
+
+        .download-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .loading-indicator {
+            display: none;
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .character-container {
+                width: 273px;
+                height: 410px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🎮 角色创建器</h1>
+        
+        <div class="character-preview">
+            <div class="character-container">
+                <img id="baseCharacter" class="character-layer" src="/placeholder.svg" alt="基础角色">
+                <img id="shirtLayer" class="character-layer" src="/placeholder.svg" alt="衣服">
+                <img id="pantsLayer" class="character-layer" src="/placeholder.svg" alt="裤子">
+            </div>
+            
+            <div class="loading-indicator" id="loadingIndicator">
+                正在加载图片...
+            </div>
+            
+            <div class="action-buttons">
+                <button class="action-btn reset-btn" onclick="resetCharacter()">🔄 重置</button>
+                <button class="action-btn export-btn" onclick="showExportOptions()">📸 导出</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <h3>👤 选择性别</h3>
+                <div class="option-grid">
+                    <button class="option-btn active" onclick="selectGender('male')">👨 男性</button>
+                    <button class="option-btn" onclick="selectGender('female')">👩 女性</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>🎨 选择肤色</h3>
+                <div class="option-grid">
+                    <button class="option-btn active" onclick="selectSkinTone('asian')">黄种人</button>
+                    <button class="option-btn" onclick="selectSkinTone('caucasian')">白种人</button>
+                    <button class="option-btn" onclick="selectSkinTone('african')">黑种人</button>
+                </div>
+            </div>
+
+            <div class="control-group" id="shirtGroup">
+                <h3>👕 衣服颜色</h3>
+                <div class="option-grid" id="shirtOptions"></div>
+            </div>
+
+            <div class="control-group" id="pantsGroup">
+                <h3>👖 裤子颜色</h3>
+                <div class="option-grid" id="pantsOptions"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="export-options" id="exportOptions">
+        <div class="export-modal">
+            <h2>导出选项</h2>
+            <div class="export-option">
+                <label for="exportSize">尺寸</label>
+                <select id="exportSize">
+                    <option value="original">原始尺寸 (683x1024)</option>
+                    <option value="medium">中等尺寸 (512x768)</option>
+                    <option value="small">小尺寸 (341x512)</option>
+                    <option value="thumbnail">缩略图 (170x256)</option>
+                </select>
+            </div>
+            <div class="export-option">
+                <label for="exportFormat">格式</label>
+                <select id="exportFormat">
+                    <option value="png">PNG (透明背景)</option>
+                    <option value="jpeg">JPEG (白色背景)</option>
+                </select>
+            </div>
+            <div class="export-option">
+                <label for="exportFilename">文件名</label>
+                <input type="text" id="exportFilename" value="my-character">
+            </div>
+            <div class="export-actions">
+                <button class="cancel-btn" onclick="hideExportOptions()">取消</button>
+                <button class="download-btn" onclick="exportCharacter()">下载</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取当前仓库的基础路径
+        const getRepoBase = () => {
+            const currentUrl = window.location.href;
+            if (currentUrl.includes('github.io')) {
+                // GitHub Pages 环境
+                const pathParts = window.location.pathname.split('/');
+                const repoName = pathParts[1];
+                return `https://cdn.jsdelivr.net/gh/${window.location.hostname.split('.')[0]}/${repoName}@main/`;
+            } else {
+                // 本地开发环境，使用相对路径
+                return './';
+            }
+        };
+
+        const CDN_BASE = getRepoBase();
+
+        let characterConfig = {
+            gender: 'male',
+            skinTone: 'asian',
+            shirtColor: 'white',
+            pantsColor: 'black'
+        };
+
+        const imageAssets = {
+            base: {
+                male: {
+                    asian: CDN_BASE + "asian-male.png",
+                    caucasian: CDN_BASE + "caucasian-male.png",
+                    african: CDN_BASE + "african-male.png"
+                },
+                female: {
+                    asian: CDN_BASE + "asian-female.png",
+                    caucasian: CDN_BASE + "caucasian-female.png",
+                    african: CDN_BASE + "african-female.png"
+                }
+            },
+            clothes: {
+                male: {
+                    shirts: {
+                        white: CDN_BASE + "white-shirt.png",
+                        red: CDN_BASE + "red-shirt.png",
+                        blue: CDN_BASE + "blue-shirt.png"
+                    },
+                    pants: {
+                        black: CDN_BASE + "black-pants.png",
+                        blue: CDN_BASE + "blue-pants.png",
+                        brown: CDN_BASE + "brown-pants.png"
+                    }
+                },
+                female: {
+                    shirts: {
+                        white: CDN_BASE + "white-shirt-female.png",
+                        red: CDN_BASE + "red-shirt-female.png",
+                        blue: CDN_BASE + "blue-shirt-female.png"
+                    },
+                    pants: {
+                        black: CDN_BASE + "black-pants-female.png",
+                        blue: CDN_BASE + "blue-pants-female.png",
+                        brown: CDN_BASE + "brown-pants-female.png"
+                    }
+                }
+            }
+        };
+
+        const colorConfig = {
+            shirts: [
+                { key: 'white', name: '白色', color: '#f8f9fa', border: '#dee2e6' },
+                { key: 'red', name: '红色', color: '#dc3545' },
+                { key: 'blue', name: '蓝色', color: '#007bff' }
+            ],
+            pants: [
+                { key: 'black', name: '黑色', color: '#212529' },
+                { key: 'blue', name: '蓝色', color: '#007bff' },
+                { key: 'brown', name: '棕色', color: '#8B4513' }
+            ]
+        };
+
+        const imageCache = new Map();
+
+        function preloadImage(src) {
+            return new Promise((resolve, reject) => {
+                if (imageCache.has(src)) {
+                    resolve(imageCache.get(src));
+                    return;
+                }
+
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    imageCache.set(src, img);
+                    resolve(img);
+                };
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        function selectGender(gender) {
+            characterConfig.gender = gender;
+            updateActiveButton('gender', gender);
+            updateClothingOptions();
+            updateCharacterDisplay();
+        }
+
+        function selectSkinTone(skinTone) {
+            characterConfig.skinTone = skinTone;
+            updateActiveButton('skinTone', skinTone);
+            updateCharacterDisplay();
+        }
+
+        function selectShirtColor(color) {
+            characterConfig.shirtColor = color;
+            updateActiveColorButton('shirt', color);
+            updateCharacterDisplay();
+        }
+
+        function selectPantsColor(color) {
+            characterConfig.pantsColor = color;
+            updateActiveColorButton('pants', color);
+            updateCharacterDisplay();
+        }
+
+        function updateClothingOptions() {
+            const shirtOptions = document.getElementById('shirtOptions');
+            const pantsOptions = document.getElementById('pantsOptions');
+            
+            shirtOptions.innerHTML = '';
+            pantsOptions.innerHTML = '';
+            
+            colorConfig.shirts.forEach(shirt => {
+                const div = document.createElement('div');
+                div.className = 'color-option';
+                div.style.backgroundColor = shirt.color;
+                if (shirt.border) {
+                    div.style.borderColor = shirt.border;
+                }
+                div.title = shirt.name;
+                div.onclick = () => selectShirtColor(shirt.key);
+                if (characterConfig.shirtColor === shirt.key) {
+                    div.classList.add('active');
+                }
+                shirtOptions.appendChild(div);
+            });
+            
+            colorConfig.pants.forEach(pants => {
+                const div = document.createElement('div');
+                div.className = 'color-option';
+                div.style.backgroundColor = pants.color;
+                div.title = pants.name;
+                div.onclick = () => selectPantsColor(pants.key);
+                if (characterConfig.pantsColor === pants.key) {
+                    div.classList.add('active');
+                }
+                pantsOptions.appendChild(div);
+            });
+        }
+
+        function updateActiveButton(type, value) {
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes(getDisplayText(type, value))) {
+                    btn.classList.add('active');
+                } else if (btn.classList.contains('active') && isTypeButton(btn, type)) {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function updateActiveColorButton(type, color) {
+            const container = type === 'shirt' ? 'shirtOptions' : 'pantsOptions';
+            const colorOptions = document.querySelectorAll(`#${container} .color-option`);
+            colorOptions.forEach(option => {
+                if (option.title === getColorDisplayText(color)) {
+                    option.classList.add('active');
+                } else {
+                    option.classList.remove('active');
+                }
+            });
+        }
+
+        function getDisplayText(type, value) {
+            const textMap = {
+                gender: { male: '男性', female: '女性' },
+                skinTone: { asian: '黄种人', caucasian: '白种人', african: '黑种人' }
+            };
+            return textMap[type][value];
+        }
+
+        function getColorDisplayText(color) {
+            const colorMap = {
+                white: '白色', red: '红色', blue: '蓝色',
+                black: '黑色', brown: '棕色'
+            };
+            return colorMap[color];
+        }
+
+        function isTypeButton(btn, type) {
+            if (type === 'gender') {
+                return btn.textContent.includes('男性') || btn.textContent.includes('女性');
+            }
+            if (type === 'skinTone') {
+                return btn.textContent.includes('黄种人') || btn.textContent.includes('白种人') || btn.textContent.includes('黑种人');
+            }
+            return false;
+        }
+
+        function updateCharacterDisplay() {
+            const baseImg = document.getElementById('baseCharacter');
+            const shirtImg = document.getElementById('shirtLayer');
+            const pantsImg = document.getElementById('pantsLayer');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            loadingIndicator.style.display = 'block';
+
+            if (characterConfig.gender && characterConfig.skinTone) {
+                const baseSrc = imageAssets.base[characterConfig.gender][characterConfig.skinTone];
+                baseImg.src = baseSrc;
+                baseImg.style.display = 'block';
+                
+                baseImg.onload = () => {
+                    loadingIndicator.style.display = 'none';
+                };
+                
+                baseImg.onerror = function() {
+                    console.warn('基础角色图片加载失败:', this.src);
+                    this.style.display = 'none';
+                    loadingIndicator.style.display = 'none';
+                };
+            } else {
+                baseImg.style.display = 'none';
+            }
+
+            if (characterConfig.shirtColor && characterConfig.gender) {
+                const shirtSrc = imageAssets.clothes[characterConfig.gender].shirts[characterConfig.shirtColor];
+                shirtImg.src = shirtSrc;
+                shirtImg.style.display = 'block';
+                
+                shirtImg.onerror = function() {
+                    console.warn('衣服图片加载失败:', this.src);
+                    this.style.display = 'none';
+                };
+            } else {
+                shirtImg.style.display = 'none';
+            }
+
+            if (characterConfig.pantsColor && characterConfig.gender) {
+                const pantsSrc = imageAssets.clothes[characterConfig.gender].pants[characterConfig.pantsColor];
+                pantsImg.src = pantsSrc;
+                pantsImg.style.display = 'block';
+                
+                pantsImg.onerror = function() {
+                    console.warn('裤子图片加载失败:', this.src);
+                    this.style.display = 'none';
+                };
+            } else {
+                pantsImg.style.display = 'none';
+            }
+        }
+
+        function resetCharacter() {
+            characterConfig = {
+                gender: 'male',
+                skinTone: 'asian',
+                shirtColor: 'white',
+                pantsColor: 'black'
+            };
+
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                if (btn.textContent.includes('男性') || 
+                    btn.textContent.includes('黄种人')) {
+                    btn.classList.add('active');
+                }
+            });
+
+            updateClothingOptions();
+            updateCharacterDisplay();
+        }
+
+        function showExportOptions() {
+            document.getElementById('exportOptions').style.display = 'flex';
+        }
+
+        function hideExportOptions() {
+            document.getElementById('exportOptions').style.display = 'none';
+        }
+
+        async function exportCharacter() {
+            const sizeOption = document.getElementById('exportSize').value;
+            const formatOption = document.getElementById('exportFormat').value;
+            const filename = document.getElementById('exportFilename').value || 'my-character';
+
+            let width, height;
+            switch(sizeOption) {
+                case 'medium':
+                    width = 512; height = 768; break;
+                case 'small':
+                    width = 341; height = 512; break;
+                case 'thumbnail':
+                    width = 170; height = 256; break;
+                default:
+                    width = 683; height = 1024;
+            }
+
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = width;
+                canvas.height = height;
+
+                if (formatOption === 'jpeg') {
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, width, height);
+                }
+
+                const imagesToLoad = [];
+                
+                if (characterConfig.gender && characterConfig.skinTone) {
+                    imagesToLoad.push(imageAssets.base[characterConfig.gender][characterConfig.skinTone]);
+                }
+                if (characterConfig.pantsColor && characterConfig.gender) {
+                    imagesToLoad.push(imageAssets.clothes[characterConfig.gender].pants[characterConfig.pantsColor]);
+                }
+                if (characterConfig.shirtColor && characterConfig.gender) {
+                    imagesToLoad.push(imageAssets.clothes[characterConfig.gender].shirts[characterConfig.shirtColor]);
+                }
+
+                const loadedImages = await Promise.all(
+                    imagesToLoad.map(src => preloadImage(src))
+                );
+
+                let imageIndex = 0;
+                
+                if (characterConfig.gender && characterConfig.skinTone) {
+                    ctx.drawImage(loadedImages[imageIndex], 0, 0, width, height);
+                    imageIndex++;
+                }
+                
+                if (characterConfig.pantsColor && characterConfig.gender) {
+                    ctx.drawImage(loadedImages[imageIndex], 0, 0, width, height);
+                    imageIndex++;
+                }
+                
+                if (characterConfig.shirtColor && characterConfig.gender) {
+                    ctx.drawImage(loadedImages[imageIndex], 0, 0, width, height);
+                    imageIndex++;
+                }
+
+                const dataURL = canvas.toDataURL(`image/${formatOption}`, 1.0);
+                const link = document.createElement('a');
+                link.download = `${filename}.${formatOption}`;
+                link.href = dataURL;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                hideExportOptions();
+                console.log('导出成功!');
+                
+            } catch (error) {
+                console.error('导出失败:', error);
+                alert('导出失败，请检查网络连接或稍后重试。\n\n备用方案：您可以右键点击角色预览区域选择"另存为图片"。');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('角色创建器已加载');
+            updateClothingOptions();
+            updateCharacterDisplay();
+        });
+    </script>
+</body>
+</html>
